@@ -93,18 +93,19 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         else
         {
             averageActive = true;
+            samples = currSampleRate;
         }
         time = 0;
         tapped = false;
     }
 
-    if(time < (currSampleRate * 6) && averageActive) //NOT ENOUGH PRECISION!!!!!
+    if(time < (samples * 3.0f) && averageActive) //NOT ENOUGH PRECISION!!!!!
     {
         time += bufferToFill.numSamples;
         //__android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%i", time);
     }
 
-    if(averageActive && time >= (currSampleRate * 6)) //Resetting the array if the time bettween clicks is larger than 10s
+    if(averageActive && time >= (samples * 3.0f)) //Resetting the array if the time bettween clicks is larger than 10s
     {
         //__android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%s", "reset");
         averageActive = false;
@@ -182,7 +183,8 @@ void MainComponent ::calculateAverage()
         sumTimes += timeAVGArray[i];
     }
     //__android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%i", sumTimes);
-    float seconds = (float)sumTimes / ((float) currSampleRate *((float) timeAVGNum + 1));
+    samples = (float)sumTimes / ((float) timeAVGNum + 1);
+    float seconds = samples / (float)currSampleRate;
 
     bpm = 60.0f / seconds;
 

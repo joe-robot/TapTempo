@@ -52,6 +52,7 @@ private:
     bool averageActive = false;
     int time = 0;
     float bpm;
+    float samples = 48000;
 
     std::atomic<bool> start = {false};
     bool prevStart = false;
