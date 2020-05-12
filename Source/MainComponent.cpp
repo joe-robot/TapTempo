@@ -57,7 +57,24 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
 {
+    //Clearing buffer to stop random noise
+    bufferToFill.clearActiveBufferRegion();
     //__android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%s", "loopy");
+    for(int channels=0; channels<bufferToFill.buffer->getNumChannels();channels++)
+    {
+        float* const buff = bufferToFill.buffer->getWritePointer(channels, bufferToFill.startSample);
+
+        for(int sample=0; sample<bufferToFill.numSamples;sample++)
+        {
+            if(tapped)
+            {
+                buff[sample] = (noise.nextFloat())-0.5f;
+            } else
+            {
+                buff[sample] = 0;
+            }
+        }
+    }
     if(tapped)
     {
         //__android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%i", currSampleRate);
@@ -94,24 +111,9 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         timeAVGArrayPos = 0;
     }
 
-    /*for(int channels=0; channels<bufferToFill.buffer->getNumChannels();channels++)
-    {
-        float* const buff = bufferToFill.buffer->getWritePointer(channels, bufferToFill.startSample);
 
-        for(int sample=0; sample<bufferToFill.numSamples;sample++)
-        {
-            if(averageActive)
-           {
-                buff[sample] = (noise.nextFloat())-0.5f;
-            } else
-            {
-                buff[sample] = 0;
-            }
-        }
-    }*/
 
-    //Clearing buffer to stop random noise
-    //bufferToFill.clearActiveBufferRegion();
+
 }
 
 void MainComponent::releaseResources()
@@ -150,6 +152,7 @@ void MainComponent::resized()
 void MainComponent::tapTempo()
 {
     tapped = true;
+    prevTime = clock.getMillisecondCounter();
 }
 
 void MainComponent ::calculateAverage()

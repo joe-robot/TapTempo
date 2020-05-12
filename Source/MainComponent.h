@@ -39,6 +39,8 @@ private:
 
     void calculateAverage();
 
+    void updateTimeArray();
+
     OwnedArray<Button> tapThis;
 
     bool tapped = false;
@@ -49,6 +51,8 @@ private:
     bool averageActive = false;
     int time = 0;
 
+    Time clock;
+    int64 prevTime = 0;
 
     Random noise;
 
