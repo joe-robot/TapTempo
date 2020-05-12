@@ -55,13 +55,6 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     currSampleRate = sampleRate;
     myMetro.setSampleRate(sampleRate);
 
-    // This function will be called when the audio device is started, or when
-    // its settings (i.e. sample rate, block size, etc) are changed.
-
-    // You can use this function to initialise any resources you might need,
-    // but be careful - it will be called on the audio thread, not the GUI thread.
-
-    // For more details, see the help for AudioProcessor::prepareToPlay()
 }
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
@@ -70,25 +63,22 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     bufferToFill.clearActiveBufferRegion();
     //__android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%s", "loopy");
 
-    
 
-    for(int channels=0; channels<bufferToFill.buffer->getNumChannels();channels++)
-    {
-        float* const buff = bufferToFill.buffer->getWritePointer(channels, bufferToFill.startSample);
 
-        for(int sample=0; sample<bufferToFill.numSamples;sample++)
-        {
-            if(tapped)
-            {
-                buff[sample] = (noise.nextFloat())-0.5f;
-            } else
-            {
-                buff[sample] = 0;
-            }
-        }
-    }
     if(tapped)
     {
+        if(!start)
+        {
+            //PLay sound if tapped
+            for (int channels = 0; channels < bufferToFill.buffer->getNumChannels(); channels++) {
+                float *const buff = bufferToFill.buffer->getWritePointer(channels,
+                                                                         bufferToFill.startSample);
+
+                for (int sample = 0; sample < bufferToFill.numSamples; sample++) {
+                    buff[sample] = ((noise.nextFloat()) - 0.5f);
+                }
+            }
+        }
         //__android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%i", currSampleRate);
         if(averageActive)
         {
@@ -126,7 +116,16 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 
     if(start) //If set to start metronome
     {
+        if(!prevStart)
+        {
+            myMetro.setTempo(bpm);
+            prevStart = true;
+        }
         myMetro.getNextBlock(bufferToFill);
+    }
+    if(!start && prevStart)
+    {
+        prevStart = false;
     }
 
 
@@ -160,9 +159,9 @@ void MainComponent::resized()
     float width = getLocalBounds().getWidth();
     float height = getLocalBounds().getHeight();
 
-    for(auto* buttons : tapThis)
+    for(int i = 0; i < tapThis.size(); ++i)
     {
-        buttons -> setBounds(width * 0.025f, height * 0.025f, width*0.95, height*0.7f);
+        tapThis[i] ->setBounds(width * buttonPlaceArray[i * 4], height * buttonPlaceArray[i * 4 + 1], width * buttonPlaceArray[i * 4 + 2], height * buttonPlaceArray[i * 4 + 3]);
     }
 }
 
@@ -175,7 +174,7 @@ void MainComponent::tapTempo()
 
 void MainComponent ::calculateAverage()
 {
-    float bpm = 0;
+    bpm = 0;
     int sumTimes = 0;
 
     for(int i = 0; i < timeAVGNum + 1; ++i)
@@ -187,7 +186,10 @@ void MainComponent ::calculateAverage()
 
     bpm = 60.0f / seconds;
 
-    myMetro.setTempo(bpm); //Setting Metronome BPM
+    if(start)
+    {
+        myMetro.setTempo(bpm); //Setting Metronome BPM
+    }
 
     tapThis[0] -> setButtonText("BPM: " + String(bpm));
     tapThis[0] -> repaint();

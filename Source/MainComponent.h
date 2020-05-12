@@ -51,8 +51,10 @@ private:
     int timeAVGNum = 0; //Is the number of values to include in the average
     bool averageActive = false;
     int time = 0;
+    float bpm;
 
-    bool start = false;
+    std::atomic<bool> start = {false};
+    bool prevStart = false;
 
     Metronome myMetro;
 
@@ -60,6 +62,10 @@ private:
     int64 prevTime = 0;
 
     Random noise;
+
+    float buttonPlaceArray[12] = {0.025f, 0.025f, 0.95f, 0.7f,
+                                  0.025f, 0.75f, 0.45f, 0.225f,
+                                  0.525f, 0.75f, 0.45f, 0.225f};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

@@ -9,6 +9,7 @@
 */
 
 #include "Metronome.h"
+#include <android/log.h>
 
 Metronome::Metronome()
 {
@@ -27,26 +28,40 @@ void Metronome::setTempo(float newBPM)
 {
     newBPM  = newBPM > 0 ? newBPM : 120; //Check bpm in range
 
-    sampleInterval = 60.0f / (newBPM * sampleRate);
+    sampleInterval = (60.0f * sampleRate)/ (newBPM);
+    intervalProgress = 0; //Resetting sample to next sound
+    soundPlaying = false;
 }
 
 void Metronome::getNextBlock(const AudioSourceChannelInfo &bufferToFill)
 {
+   /* numSoundsInBuff = 0;
     int bufferSamples = bufferToFill.numSamples;
-    while(samplesToNextSound - bufferSamples < 0) //If to play sound in this buffer then find start point up to 5 start points
+    bool addSamples = true;
+    while(addSamples)
     {
-        samplePos[numSoundsInBuff] = samplesToNextSound;
-        numSoundsInBuff++;
-        samplesToNextSound = sampleInterval;
-        bufferSamples -= samplesToNextSound;
+        if (samplesToNextSound - bufferSamples < 0) //If to play sound in this buffer then find start point up to 5 start points
+        {
+            samplePos[numSoundsInBuff] =
+                    numSoundsInBuff > 0 ? samplePos[numSoundsInBuff - 1] + samplesToNextSound : samplesToNextSound;
+            numSoundsInBuff++;
+            bufferSamples -= samplesToNextSound;
+            samplesToNextSound = sampleInterval;
+        }
+        else
+        {
+            samplesToNextSound = samplesToNextSound - bufferSamples;
+            addSamples = false;
+        }
     }
 
     if(soundPlaying)
     {
+        soundPlaying = false;
         setNextBlock(bufferToFill, 0, soundProgress);
     }
 
-    for(int i = 0; numSoundsInBuff < 0; ++i)
+    for(int i = 0; i < numSoundsInBuff; ++i)
     {
         float numberSamplesPossible = bufferToFill.numSamples - samplePos[i] - soundDuration;
         if(numberSamplesPossible > 0)
@@ -60,20 +75,79 @@ void Metronome::getNextBlock(const AudioSourceChannelInfo &bufferToFill)
             soundPlaying = true;
         }
 
-        setNextBlock(bufferSamples, samplePos[i], numberSamplesPossible);
-    }
+        setNextBlock(bufferToFill, samplePos[i], numberSamplesPossible);
+    }*/
+
+
+   numSoundsInBuff = 0;
+   int bufferSize = bufferToFill.numSamples;
+
+   if(soundPlaying)
+   {
+       samplePos[0] = 0;
+       if(soundProgress < bufferSize)
+       {
+           sampleEndPos[0] = soundProgress;
+           soundPlaying = false;
+       }
+       else
+       {
+           sampleEndPos[0] = bufferSize;
+           soundProgress = bufferSize - soundProgress;
+       }
+
+       numSoundsInBuff++;
+   }
+
+
+   int maxNumInterval = ceil(bufferSize/sampleInterval);
+
+   for(int i =0; i< bufferSize; ++i)
+   {
+       if(i + intervalProgress < bufferSize)
+       {
+           samplePos[numSoundsInBuff] = i + intervalProgress;
+           intervalProgress = sampleInterval;
+           int endPoint = i + intervalProgress + soundDuration;
+           if(endPoint < bufferSize)
+           {
+               sampleEndPos[numSoundsInBuff] = endPoint;
+           }
+           else
+           {
+               sampleEndPos[numSoundsInBuff] = bufferSize;
+               soundProgress = soundDuration - (endPoint - bufferSize);
+               soundPlaying = true;
+           }
+           i = i + intervalProgress;
+           numSoundsInBuff++;
+       }
+       else
+       {
+           intervalProgress = (i + intervalProgress) - bufferSize;
+           break;
+       }
+   }
+
+   setNextBlock(bufferToFill);
+
 }
 
-void Metronome::setNextBlock(const AudioSourceChannelInfo &bufferToFill, int startSample, int endSample)
+void Metronome::setNextBlock(const AudioSourceChannelInfo &bufferToFill)
 {
-    for (int channels = 0; channels < bufferToFill.buffer->getNumChannels(); channels++)
+   for (int channels = 0; channels < bufferToFill.buffer->getNumChannels(); channels++)
     {
 
         float *const buff = bufferToFill.buffer->getWritePointer(channels, bufferToFill.startSample);
 
-        for (int sample = startSample; sample < endSample; sample++)
+
+        //for (int sample = 0; sample < bufferToFill.numSamples; sample++)
+        for(int i = 0; i < numSoundsInBuff; ++i)
         {
-                buff[sample] = noise.nextFloat() - 0.5f; //Getting next float to play
+            for(int j = samplePos[i]; j < sampleEndPos[i]; j++)
+            {
+                buff[j] = buff[j] + noise.nextFloat()-0.5f;
+            }
         }
     }
 }
