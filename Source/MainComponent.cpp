@@ -13,7 +13,7 @@ MainComponent::MainComponent()
 {
 
     auto* button = tapThis.add(new TextButton("yeahTapMe"));
-    button -> onClick= [this]() { tapTempo(); };
+    button -> onStateChange = [this]() { tapTempo(); };
     addAndMakeVisible(button);
 
 
@@ -151,8 +151,9 @@ void MainComponent::resized()
 
 void MainComponent::tapTempo()
 {
-    tapped = true;
-    prevTime = clock.getMillisecondCounter();
+    if(tapThis[0] -> getState() == Button::ButtonState::buttonDown)
+        tapped = true;
+    //prevTime = clock.getMillisecondCounter();
 }
 
 void MainComponent ::calculateAverage()
