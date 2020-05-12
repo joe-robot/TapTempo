@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "Metronome.h"
 
 //==============================================================================
 /*
@@ -45,11 +46,15 @@ private:
 
     bool tapped = false;
     int currSampleRate = 48000;
-    int timeAVGArray[10] = {0,0,0,0,0,0,0,0,0,0};
+    int timeAVGArray[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     int timeAVGArrayPos = 0;
     int timeAVGNum = 0; //Is the number of values to include in the average
     bool averageActive = false;
     int time = 0;
+
+    bool start = false;
+
+    Metronome myMetro;
 
     Time clock;
     int64 prevTime = 0;

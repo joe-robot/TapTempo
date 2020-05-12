@@ -7,6 +7,8 @@
       <FILE id="sYuIMa" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
       <FILE id="KWDyqd" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="DDrxCf" name="Metronome.cpp" compile="1" resource="0" file="Source/Metronome.cpp"/>
+      <FILE id="WL08rJ" name="Metronome.h" compile="0" resource="0" file="Source/Metronome.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>

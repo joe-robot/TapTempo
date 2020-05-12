@@ -12,8 +12,16 @@
 MainComponent::MainComponent()
 {
 
-    auto* button = tapThis.add(new TextButton("yeahTapMe"));
+    auto* button = tapThis.add(new TextButton("Tap Here"));
     button -> onStateChange = [this]() { tapTempo(); };
+    addAndMakeVisible(button);
+
+    button = tapThis.add(new TextButton("Start"));
+    button -> onClick = [this]() { start = true; };
+    addAndMakeVisible(button);
+
+    button = tapThis.add(new TextButton("Stop"));
+    button -> onClick = [this]() { start = false; };
     addAndMakeVisible(button);
 
 
@@ -45,6 +53,7 @@ MainComponent::~MainComponent()
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
     currSampleRate = sampleRate;
+    myMetro.setSampleRate(sampleRate);
 
     // This function will be called when the audio device is started, or when
     // its settings (i.e. sample rate, block size, etc) are changed.
@@ -60,6 +69,9 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     //Clearing buffer to stop random noise
     bufferToFill.clearActiveBufferRegion();
     //__android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%s", "loopy");
+
+    
+
     for(int channels=0; channels<bufferToFill.buffer->getNumChannels();channels++)
     {
         float* const buff = bufferToFill.buffer->getWritePointer(channels, bufferToFill.startSample);
@@ -83,9 +95,9 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             timeAVGArray[timeAVGArrayPos] = time; //Adding element to the array
             calculateAverage();
             timeAVGArrayPos++;
-            timeAVGArrayPos = timeAVGArrayPos % 10;
+            timeAVGArrayPos = timeAVGArrayPos % 20;
             //__android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "%i", time);
-            timeAVGNum = timeAVGNum < 9 ? timeAVGNum + 1: 9;
+            timeAVGNum = timeAVGNum < 19 ? timeAVGNum + 1: 19;
 
         }
         else
@@ -111,6 +123,11 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         timeAVGArrayPos = 0;
     }
 
+
+    if(start) //If set to start metronome
+    {
+        myMetro.getNextBlock(bufferToFill);
+    }
 
 
 
@@ -145,13 +162,13 @@ void MainComponent::resized()
 
     for(auto* buttons : tapThis)
     {
-        buttons -> setBounds(width * 0.025f, height * 0.025f, width*0.95, height*0.95f);
+        buttons -> setBounds(width * 0.025f, height * 0.025f, width*0.95, height*0.7f);
     }
 }
 
 void MainComponent::tapTempo()
 {
-    if(tapThis[0] -> getState() == Button::ButtonState::buttonDown)
+    if(tapThis[0] -> getState() == Button::ButtonState::buttonDown) //Making sure button press a button down press
         tapped = true;
     //prevTime = clock.getMillisecondCounter();
 }
@@ -169,6 +186,8 @@ void MainComponent ::calculateAverage()
     float seconds = (float)sumTimes / ((float) currSampleRate *((float) timeAVGNum + 1));
 
     bpm = 60.0f / seconds;
+
+    myMetro.setTempo(bpm); //Setting Metronome BPM
 
     tapThis[0] -> setButtonText("BPM: " + String(bpm));
     tapThis[0] -> repaint();
